@@ -328,5 +328,107 @@ Ici on utilise un exploit avec le mur de la case 8x1 qui glitche.
 
 ## 6 Keygen avec KLEE
 
+> Modifiez le fichier `keygen.c` afin de pouvoir exécuter KLEE dessus. Faites-en sorte que le programme crashe lorsqu’une solution est trouvée. Lancez KLEE à l’aide de la commande suivante :
+> klee --optimize --libc=uclibc --posix-runtime keygen.bc --sym-arg 100
+
+On ajoute:
+
+* `#include <klee/klee.h>`
+* `#include <assert.h>`
+* `assert(0);` dans le if(v5) final, pour le faire crash quand la solution est trouvée
+
+Ici pas besoin de rajouter des klee_symbolic..., le programme va pouvoir mettre les bonnes inputs directement tout seul.
+
+```
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
+#include <klee/klee.h>
+
+int main(int a1, char **a2, char **a3)
+{
+
+  __int64_t v4; // rbx@10
+  signed int v5; // [sp+1Ch] [bp-14h]@4
+
+  if ( a1 == 2 )
+  {
+    if ( 42 * (strlen(a2[1]) + 1) != 504 )
+      goto LABEL_31;
+    v5 = 1;
+    if ( *a2[1] != 69 )
+      v5 = 0;
+    if ( 2 * a2[1][3] != 202 )
+      v5 = 0;
+    if ( *a2[1] + 14 != a2[1][6] - 14 )
+      v5 = 0;
+    v4 = a2[1][5];
+    if ( v4 != 9 * strlen(a2[1]) + 6)
+      v5 = 0;
+    if ( a2[1][1] != a2[1][7]+6 )
+      v5 = 0;
+    if ( a2[1][1] != a2[1][10] + 5)
+      v5 = 0;
+    if ( a2[1][1] - 51 != *a2[1] )
+      v5 = 0;
+    if ( a2[1][3] + 16!= a2[1][9] )
+      v5 = 0;
+    if ( a2[1][4] != 108 )
+      v5 = 0;
+    if ( a2[1][2] - a2[1][1] != -8 )
+      v5 = 0;
+    if ( a2[1][8] - a2[1][7] != -5 )
+      v5 = 0;
+    if ( v5 ) {
+      printf("Launching software!\n");
+      assert(0);
+    }
+    else
+LABEL_31:
+      printf("Try again...\n");
+  }
+  else
+  {
+    printf("Usage: %s <pass>\n", *a2);
+  }
+}
 
 
+```
+
+On build keygen.bc
+
+`clang -I ../include -emit-llvm -c -g -O0 -Xclang -disable-O0-optnone keygen.c`
+
+On lance klee avec la commande donnée dans l'ennoncé:
+
+`klee --optimize --libc=uclibc --posix-runtime keygen.bc --sym-arg 100`
+
+#### Question 6.1
+
+> A quoi servent les différentes options passées à KLEE ?
+
+* `--sym-arg 100`: permet de mettre une limite maximale de longueur d'argument a ne pas dépasser. Ainsi nous allons tester que des arguments de taille < 100, sinon ça risqe de jamais ce finir.
+* `--posix-runtime`: Cette option permet de modifier les limites de runtime de klee, que ce soit en fixant du temps, ou comme ici en fixant une taille maximale des inputs par la suite. C'est ce qui permet donc l'argument `--sym-arg 100`
+* `--libc=uclibc`: pour choisir quelle libc va etre utilisée pour run, ici c'est uclibc, une très petite lib faite pour l'embarqué.
+* `--optimize`: Ça fait en sorte d'optimiser le code avant l'exécution, pour obtenir des résultat plus rapidement.
+
+#### Question 6.2
+
+> Quel est le mot de passe permettant de lancer le programme ?
+
+On remarque qu'il n'y a qu'une erreur, c'est bien notre assertion error, donc on a notre mot de passe là. on ouvre le .ktest, et là on trouve le mot de passe `Expeliarmus`.
+
+![](images/6.sol.PNG)
+
+
+
+
+
+## 8 Comparaison avec le Fuzzer
+
+
+
+#### Question 8.1
+
+> Que pouvez-vous dire sur les performances de KLEE sur cet exemple par rapport à afl? Pourquoi avons-nous de telles différences ? Justifiez votre réponse.
