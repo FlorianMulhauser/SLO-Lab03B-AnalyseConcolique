@@ -429,6 +429,29 @@ On remarque qu'il n'y a qu'une erreur, c'est bien notre assertion error, donc on
 
 
 
+#### Manipulation 8.1
+
+On edite le fichier de base pour rajouter un assert(0) a la place du abort et on met un petit main.
+
+On lance la commande klee avec la commande time devant:
+
+`time klee --optimize --libc=uclibc --posix-runtime deadbeef.bc --sym-arg 100`
+
+![](images/8.PNG)
+
+Ici on trouve deadbeef (visible avec le assertion fail), en environ 1.3 secondes, ce qui est plus rapide qu'avec AFL
+
 #### Question 8.1
 
 > Que pouvez-vous dire sur les performances de KLEE sur cet exemple par rapport à afl? Pourquoi avons-nous de telles différences ? Justifiez votre réponse.
+
+On s'est documentés avec plusieurs sources, telle que (https://srg.doc.ic.ac.uk/klee18/talks/Zmyslowski-Feeding-the-Fuzzers-with-KLEE.pdf)
+
+AFL utilise un algorithme génétique `genetic algorithms to automatically discover clean, interesting test cases that trigger new internal states in the targeted binary`,c'est donc fort, mais si on ne l'aide pas à se restreindre a une plus petite population initiale il ne va pas etre efficace. Notament sur un problème comme deadbeef (cf slides du lien). Car l'évolution va etre longue et apporter peut d'infos sur un problème un peu random comme ça. Plein de comparatifs nous montre qu'effectivement pour ce problème AFL est bien moins performant pour cette tache que KLEE (de 5 à 10 fois environ selon les versions)
+
+Alors que KLEE a l'avantage d'avoir son système d'optimisation du programme avec le `--optimize` pour effectuer plus rapidement plus de tests, donc pour explorer les chemins comme ici il est bien efficace. De plus deadbeef ne lui pose pas de problème par rapport a ses défauts principaux (path explosion et program-dependant efficacy), vu que c'est un très court programme très léger. Par contre peut etre que pour des problèmes de plus haut niveau, avec des grand programme, KLEE sera moins utile qu'AFL.
+
+
+
+
+
