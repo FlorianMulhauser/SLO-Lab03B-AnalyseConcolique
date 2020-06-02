@@ -2,13 +2,20 @@
 
 @authors: Dupont Maxime, Mülhauser Florian
 
+## Table des matières 
+ 4. [Analyser une fonction simple](#exo4)
+ 5. [Labyrinthe](#Laby)
+ 6. [Keygen avec KLEE](#keygenwithKLEE)
+ 7. [Algorithmes de Tri](#algo)
+ 8. [Comparaison avec le Fuzzer](#fuzz)
 
 
-## 4. Analyser une Fonction simple
+
+## 4. Analyser une Fonction simple <a name="exo4"></a>
 
 
 
-#### Question 4.1
+#### Question 4.1 
 
 > Que fait l'option `--only-output-states-covering-new` ? Pourquoi l'activer ?
 
@@ -116,7 +123,7 @@ on a donc bien x > y on rentre dans le premier if. Sauf que lors de l'échange d
 
 
 
-## 5 Labyrinthe
+## 5 Labyrinthe <a name="Laby"> </a>
 
 On crée un nouveau folder, avec le fichier maze.c, on y copie colle son code en ajoutant `#include <klee/klee.h>  ` Pour rendre l'input symbolique on remplace le `read(0, program, ITERS);` par `  klee_make_symbolic(program, ITERS, program);`
 
@@ -326,7 +333,7 @@ Ici on utilise un exploit avec le mur de la case 8x1 qui glitche.
 
 ![](images/5.sol4.PNG)
 
-## 6 Keygen avec KLEE
+## 6 Keygen avec KLEE <a name="keygenwithKLEE"> </a>
 
 > Modifiez le fichier `keygen.c` afin de pouvoir exécuter KLEE dessus. Faites-en sorte que le programme crashe lorsqu’une solution est trouvée. Lancez KLEE à l’aide de la commande suivante :
 > klee --optimize --libc=uclibc --posix-runtime keygen.bc --sym-arg 100
@@ -422,7 +429,7 @@ On remarque qu'il n'y a qu'une erreur, c'est bien notre assertion error, donc on
 ![](images/6.sol.PNG)
 
 
-## Algorithmes de tri (7 pts)
+## Algorithmes de tri (7 pts) <a name="algo"> </a>
 
 ### Question 7.1 (2pts): Que fait la fonction `test()` du fichier `sort.c` ?
 
@@ -462,7 +469,7 @@ if(done){
 
 
 
-## 8 Comparaison avec le Fuzzer
+## 8 Comparaison avec le Fuzzer <a name="fuzz"> </a>
 
 
 
