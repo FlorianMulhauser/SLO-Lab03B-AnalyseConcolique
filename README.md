@@ -107,10 +107,10 @@ Pour voir l'input de cette erreur, et vérifier que c'est bien ça (et si c'est 
 
 On remarque que la façon de passer ce if est de créer un underflow. En effet les\ program a input x =1920 et y = -247482527
 
-on a donc bien x > y on rentre dans le premier if. Sauf que lors de l'échange des valeurs, on fait l'opération
+on a donc bien x > y on rentre dans le premier if. Sauf que lors de l'échange des valeurs, on fait les opérations:
 
-* x = x + y; -> x = -247 480 607‬
-* y = x - y; -> y = -247 480 607‬ - (-247482527) = ... et non 1920 comme attendu
+* x = x + y; -> sachant que y est le plus grand int négative, l'opération fait un débordement sur les entier, et au lieu d'avoir un resultat négatif on aura un autre positif.
+* y = x - y; -> y = ... et non 1920 comme attendu
 * x = x -y;  -> x = .... et non -247482527 comme attendu
 * du coup on a bien `if(x - y > 0){assert(0);}` et le assert nous lance l'erreur.
 
@@ -289,4 +289,44 @@ On fait donc un grep: (on note que nos erreurs sont des .external.err et non des
 ![](images/5.1_2.PNG)
 
 pour voir les solutions nous allons ouvrire les ktest de ces tests en question:
+
+##### Solution attendue
+
+* ssssddddwwaawwddddssssddwwww
+
+![](images/5.sol1.PNG)
+
+Il s'agit de la solution standard attendue.
+
+
+
+##### Solutions dûes à une mauvaise implémentation
+
+Dans le `maze[y][x] ! = [..]`qui code le terrain (et les murs), il y a une mauvaise condition:
+
+ `&& !(( (y == 5 || ( x == 8 && y == 1) )` 
+
+ça explique qu'aucun vrai mur ne peut etre sur la ligne 5, ni sur la case 8x1. On va voir ça en apllication a présent.
+
+* ssssddddddddwwww
+
+Ici on utilise un exploit avec le mur de la ligne 5 qui glitche.
+
+![](images/5.sol2.PNG)
+
+* ssssddddwwaawwdddddd
+
+Ici on utilise un exploit avec le mur de la case 8x1 qui glitche.
+
+![](images/5.sol3.PNG)
+
+* ssssddddddwwwwdd
+
+  Ici on utilise les deux exploit sur les mur qui glitchent (case 8x1 et mur de la ligne 5)
+
+![](images/5.sol4.PNG)
+
+## 6 Keygen avec KLEE
+
+
 
