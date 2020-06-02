@@ -116,3 +116,177 @@ on a donc bien x > y on rentre dans le premier if. Sauf que lors de l'échange d
 
 
 
+## 5 Labyrinthe
+
+On crée un nouveau folder, avec le fichier maze.c, on y copie colle son code en ajoutant `#include <klee/klee.h>  ` Pour rendre l'input symbolique on remplace le `read(0, program, ITERS);` par `  klee_make_symbolic(program, ITERS, program);`
+
+Afin de pouvoir enregistrer les bonnes solutions, il faut qu'on fasse crasher le programme en cas de victoire, comme ça un rapport et un test sera effectué. Pour cela on ajoute `assert(0);` dans la boucle conditionnelle de la victoire
+
+```
+// Source:  http://feliam.wordpress.com/2010/10/07/the-symbolic-maze
+/*
+It's a maze!
+ * Use a,s,d,w to move "through" it.
+ */
+ 
+#include<string.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<klee/klee.h>
+ 
+ 
+/**
+  * Maze hardcoded dimensions
+  */
+#define H 7
+#define W 11
+/**
+  * Tha maze map
+  */
+char maze[H][W] = { "+-+---+---+",
+                    "| |     |#|",
+                    "| | --+ | |",
+                    "| |   | | |",
+                    "| +-- | | |",
+                    "|     |   |",
+                    "+-----+---+" };
+/**
+  * Draw the maze state in the screen!
+  */
+void draw ()
+{
+        int i, j;
+        for (i = 0; i < H; i++)
+          {
+                  for (j = 0; j < W; j++)
+                                  printf ("%c", maze[i][j]);
+                  printf ("\n");
+          }
+        printf ("\n");
+}
+ 
+ 
+/**
+  * The main function
+  */
+int
+main (int argc, char *argv[])
+{
+        int x, y;     //Player position
+        int ox, oy;   //Old player position
+        int i = 0;    //Iteration number
+    #define ITERS 28
+    char program[ITERS];
+   
+    
+ 
+//Initial position
+        x = 1;
+        y = 1;
+    maze[y][x]='X';
+ 
+//Print some info
+    printf ("Maze dimensions: %dx%d\n", W, H);
+    printf ("Player pos: %dx%d\n", x, y);
+    printf ("Iteration no. %d\n",i);
+    printf ("Program the player moves with a sequence of 'w', 's', 'a' and 'd'\n");
+    printf ("Try to reach the price(#)!\n");
+ 
+//Draw the maze
+    draw ();    
+//Read the directions 'program' to execute...
+   // read(0,program,ITERS);
+    //on transforme en commande symbolique pour KLEE
+    klee_make_symbolic(program, ITERS, program);
+ 
+//Iterate and run 'program'
+        while(i < ITERS)
+          {
+          //Save old player position
+                  ox = x;
+                  oy = y;
+          //Move polayer position depending on the actual command
+                  switch (program[i])
+                    {
+                    case 'w':
+                            y--;
+                            break;
+                    case 's':
+                            y++;
+                            break;
+                    case 'a':
+                            x--;
+                            break;
+                    case 'd':
+                            x++;
+                            break;
+                    default:
+                        printf("Wrong command!(only w,s,a,d accepted!)\n");
+                        printf("You loose!\n");
+                        exit(-1);
+                    }
+ 
+          //If hit the price, You Win!!            
+                  if (maze[y][x] == '#')
+                    {
+                            printf ("You win!\n");
+                            printf ("Your solution <%42s>\n",program);
+                            // ici on fait crash le programme en cas de visctoire
+                            assert(0);
+                            exit (1);
+                    }
+          //If something is wrong do not advance
+                  if (maze[y][x] != ' '
+                      &&
+                      !(( (y == 5 || ( x == 8 && y == 1) ) && maze[y][x] == '|' && x > 0 && x < W)))
+                    {
+                            x = ox;
+                            y = oy;
+                    }
+         
+          //Print new maze state and info...
+          printf ("Player pos: %dx%d\n", x, y);
+          printf ("Iteration no. %d. Action: %c. %s\n",i,program[i], ((ox==x && oy==y)?"Blocked!":""));
+         
+          //If crashed to a wall! Exit, you loose
+          if (ox==x && oy==y){
+                    printf("You loose\n");
+                exit(-2);
+          }
+          //put the player on the maze...
+          maze[y][x]='X';
+          //draw it
+                  draw ();
+          //increment iteration
+                  i++;
+                  //me wait to human
+                  sleep(1);
+          }
+//You couldn't make it! You loose!       
+printf("You loose\n");
+}
+
+```
+
+On execute ensuite KLEE, avec l'option `--emit-all-errors`, car cette fois on ne cherche pas juste le bug, mais ce qui importe c'est tout les chemins possibles à ce dernier qu'on a fixé. Donc pour une fois on a besoin de toutes les erreurs pour avoir des rapports de chaques solutions.
+
+`clang -I ../include -emit-llvm -c -g -O0 -Xclang -disable-O0-optnone maze.c` pour créer maze.bc
+
+suivi de `klee --emit-all-errors maze.bc `
+
+#### Question 5.1
+
+> Listez tous les chemins gagnants trouvés par KLEE. Expliquez pourquoi chacun de ces chemins est gagnant en vous référant au code.
+
+Suivant notre marche a suivre, nous découvrons qu'il y a 213 test, mais tous ne sont pas des erreurs (et donc des chemins gagnants).
+
+![](images/5.1_1.PNG)
+
+
+
+On fait donc un grep: (on note que nos erreurs sont des .external.err et non des assertions.err. C'est du au fait qu'on a oublié d'importer assert, mais le résultat est le meme).
+
+![](images/5.1_2.PNG)
+
+pour voir les solutions nous allons ouvrire les ktest de ces tests en question:
+
